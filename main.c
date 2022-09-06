@@ -5,15 +5,9 @@
 struct fraction{
 
 	int numerador;
-	int denomidador;
+	int denominador;
 
 };
-
-float *sum_temp_row_1 = NULL;
-float *sum_temp_row_2 = NULL;
-float *mul_temp_row = NULL;
-float *linha_do_pivo = NULL;
-
 
 
 struct fraction **create_matriz(int qtd_row , int qtd_column){
@@ -48,10 +42,10 @@ void print_matriz(int qtd_row , int qtd_column , struct fraction **matriz){
 		for(int column = 0 ; column < qtd_column ; column++){
 
 
-			if(matriz[row][column].denomidador == 1){
+			if(matriz[row][column].denominador == 1){
                 printf(" %d " , (matriz[row][column]).numerador);
 			}else{
-                printf(" %d/%d " , (matriz[row][column]).numerador , (matriz[row][column]).denomidador);
+                printf(" %d/%d " , (matriz[row][column]).numerador , (matriz[row][column]).denominador);
 			}
 
 
@@ -64,35 +58,72 @@ void print_matriz(int qtd_row , int qtd_column , struct fraction **matriz){
 
 }
 
-void simplify_fractions_of_row(struct fraction *row_to_simplify , int qtd_column){
+int mdc(int num1 , int num2){
 
-    for(int column = 0 ; column < qtd_column ; column++){
+	int mdc = 1;
+	int digit_to_div = 1;
 
+	if(num1 < 0)
+		num1 *= -1;
+	
+	
+	printf("\n");
+	while(digit_to_div <= num1 || digit_to_div <= num2){
 
-        if(row_to_simplify[column].numerador != 0 && (row_to_simplify[column]).numerador % (row_to_simplify[column]).denomidador == 0){
-            (row_to_simplify[column]).numerador /= (row_to_simplify[column]).denomidador;
-            (row_to_simplify[column]).denomidador = 1;
-        }
+		if(num1 % digit_to_div == 0 && num2 % digit_to_div == 0){
+			mdc = digit_to_div;
+		}
 
-        if(row_to_simplify[column].numerador == 0){
-            row_to_simplify[column].denomidador = 1;
-        }
+		digit_to_div++;
+		
+	}
 
-    }
-
-
+	return mdc;
+	
 }
 
-struct fraction simplyfy_fraction(struct fraction fraction){
 
-    if(fraction.denomidador < 0){
-        fraction.denomidador *= -1;
-        fraction.numerador *= -1;
-    }
+struct fraction simplify_fraction(struct fraction fraction){
+
+	if(fraction.numerador == 0){
+		fraction.denominador = 1;
+		return fraction;
+	}
+	
+	if(fraction.denominador < 0){
+	        fraction.denominador *= -1;
+	        fraction.numerador *= -1;
+	}
+
+
+	int num = mdc(fraction.numerador , fraction.denominador);
+
+	fraction.numerador /= num;
+	fraction.denominador /= num;
+
+	if(fraction.numerador == 0){
+		fraction.denominador = 1;
+	}
+
+    
 
     return fraction;
 
 }
+
+void simplify_fractions_of_row(struct fraction *row_to_simplify , int qtd_column){
+
+    for(int column = 0 ; column < qtd_column ; column++){
+
+		row_to_simplify[column] = simplify_fraction(row_to_simplify[column]);
+        
+
+    }
+
+
+}
+
+
 
 void multiply_row_by_fraction(struct fraction *row_to_multiply  , struct fraction *row_res , struct fraction fraction_to_multiply_row , int qtd_column){
 
@@ -100,7 +131,7 @@ void multiply_row_by_fraction(struct fraction *row_to_multiply  , struct fractio
 
 
         (row_res[column]).numerador = row_to_multiply[column].numerador *fraction_to_multiply_row.numerador;
-        (row_res[column]).denomidador = row_to_multiply[column].denomidador * fraction_to_multiply_row.denomidador;
+        (row_res[column]).denominador = row_to_multiply[column].denominador * fraction_to_multiply_row.denominador;
 
 
 
@@ -110,38 +141,32 @@ void multiply_row_by_fraction(struct fraction *row_to_multiply  , struct fractio
 }
 
 
+struct fraction sum_fraction(struct fraction fraction_1 , struct fraction fraction_2){
+
+	struct fraction fraction_res;
+
+	if(fraction_1.denominador == fraction_2.denominador){
+		fraction_res.numerador = fraction_1.numerador + fraction_2.numerador;
+		fraction_res.denominador = fraction_1.denominador;
+	}else{
+		fraction_res.numerador = (fraction_1.numerador * fraction_2.denominador) + (fraction_1.denominador * fraction_2.numerador);
+		fraction_res.denominador = fraction_1.denominador * fraction_2.denominador;
+	}
+
+	return fraction_res;
+	
+	
+}
 
 void sum_row(struct fraction *row_1 , struct fraction *row_2 , struct fraction *row_res , int qtd_column){
 
 	for(int column = 0 ; column < qtd_column ; column++){
 
-        if(row_1[column].denomidador == row_2[column].denomidador){
-            row_res[column].numerador = row_1[column].numerador + row_2[column].numerador;
-            row_res[column].denomidador = row_1[column].denomidador;
-        }else{
-
-            row_res[column].numerador = ((row_1[column].numerador * row_2[column].denomidador) + (row_2[column].numerador * row_1[column].denomidador));
-            row_res[column].denomidador = row_1[column].denomidador * row_2[column].denomidador;
-
-        }
-
-
-
-
+     	row_res[column] = sum_fraction(row_1[column] , row_2[column]);
 
 
 	}
 
-}
-
-void print_row(struct fraction *row , int qtd_column){
-
-    printf("\n\n***\n");
-    for(int column = 0 ; column < qtd_column ; column++){
-
-        printf(" %d/%d " , row[column].numerador , row[column].denomidador);
-    }
-    printf("\n***\n");
 }
 
 
@@ -168,8 +193,8 @@ int main(){
 
 			printf("matriz[%d][%d] = " , row , column);
 
-			if(scanf("%d/%d" , &(matriz[row][column].numerador) , &(matriz[row][column].denomidador)) == 1){
-                matriz[row][column].denomidador = 1;
+			if(scanf("%d/%d" , &(matriz[row][column].numerador) , &(matriz[row][column].denominador)) == 1){
+                matriz[row][column].denominador = 1;
 			}
 
 		}
@@ -179,19 +204,19 @@ int main(){
 	print_matriz(qtd_row , qtd_column , matriz);
 
 
-	for(int column = 0 ; column < (qtd_column - 1) ; column++){//-1 para remover a última coluna dos resultados
+	for(int column = 0 ; column < (qtd_column - 1) ; column++){//-1 para remover a ï¿½ltima coluna dos resultados
 
 
 		for(int row = 0 ; row < qtd_row ; row++){
 
-			if(row == column){//pivô
+			if(row == column){//pivï¿½
 
 
-                //transformando pivô no número 1
-                //pivô = pixô * 1/pivô , assim pivô == 1
-				fraction_to_multiply_row.denomidador = matriz[row][column].numerador;
-				fraction_to_multiply_row.numerador = matriz[row][column].denomidador;
-				fraction_to_multiply_row = simplyfy_fraction(fraction_to_multiply_row);
+                //transformando pivï¿½ no nï¿½mero 1
+                //pivï¿½ = pixï¿½ * 1/pivï¿½ , assim pivï¿½ == 1
+				fraction_to_multiply_row.denominador = matriz[row][column].numerador;
+				fraction_to_multiply_row.numerador = matriz[row][column].denominador;
+				fraction_to_multiply_row = simplify_fraction(fraction_to_multiply_row);
 
 				multiply_row_by_fraction(matriz[row]  , matriz[row] , fraction_to_multiply_row , qtd_column);
 				simplify_fractions_of_row(matriz[row] , qtd_column);
@@ -205,7 +230,7 @@ int main(){
 			}else if(row > column && matriz[row][column].numerador != 0){//inferior
 
                 fraction_to_multiply_row.numerador = -(matriz[row][column].numerador);
-                fraction_to_multiply_row.denomidador = matriz[row][column].denomidador;
+                fraction_to_multiply_row.denominador = matriz[row][column].denominador;
 
                 multiply_row_by_fraction(row_pivo  , row_res , fraction_to_multiply_row , qtd_column);
 
